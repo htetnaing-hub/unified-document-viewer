@@ -1,0 +1,15 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v1/vehicles/WBA3A5C51DF000002/deals"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "deals-WBA3A5C51DF000002.json",
+    "fixedDelayMilliseconds": 100
+  }
+}

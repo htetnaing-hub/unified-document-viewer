@@ -1,0 +1,15 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v1/vehicles/5YJSA1E26HF000001/deals"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "deals-5YJSA1E26HF000001.json",
+    "fixedDelayMilliseconds": 100
+  }
+}

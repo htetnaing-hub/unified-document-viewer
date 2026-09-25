@@ -1,0 +1,15 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v1/vehicles/1HGCM82633A004352/deals"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "deals-1HGCM82633A004352.json",
+    "fixedDelayMilliseconds": 150
+  }
+}

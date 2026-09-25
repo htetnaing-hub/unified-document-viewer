@@ -1,0 +1,17 @@
+{
+  "vehicleVin": "2T1BURHE0JC000004",
+  "repairOrders": [
+    {
+      "roNumber": "RO-8001",
+      "attachments": [
+        {
+          "attachmentId": "A-8001",
+          "category": "REPAIR_ORDER",
+          "description": "Brake pads and discs",
+          "timestamp": "2024-09-15T14:30:00Z",
+          "downloadUrl": "https://service.dealer.example/attachments/A-8001"
+        }
+      ]
+    }
+  ]
+}

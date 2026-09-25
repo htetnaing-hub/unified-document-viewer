@@ -1,0 +1,33 @@
+{
+  "vin": "1HGCM82633A004352",
+  "dealerCode": "DLR-042",
+  "deals": [
+    {
+      "dealId": "D-1001",
+      "status": "DELIVERED",
+      "documents": [
+        {
+          "docId": "S-1001-INV",
+          "docType": "SALES_INVOICE",
+          "name": "Sales invoice #1001",
+          "createdOn": "2023-03-12",
+          "link": "https://sales.dealer.example/documents/S-1001-INV"
+        },
+        {
+          "docId": "S-1001-FIN",
+          "docType": "FINANCE_AGREEMENT",
+          "name": "Finance agreement - 48 months",
+          "createdOn": "2023-03-12",
+          "link": "https://sales.dealer.example/documents/S-1001-FIN"
+        },
+        {
+          "docId": "S-1001-WAR",
+          "docType": "WARRANTY_CERTIFICATE",
+          "name": "Manufacturer warranty certificate",
+          "createdOn": "2023-03-14",
+          "link": "https://sales.dealer.example/documents/S-1001-WAR"
+        }
+      ]
+    }
+  ]
+}

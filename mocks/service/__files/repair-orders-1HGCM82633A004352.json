@@ -1,0 +1,37 @@
+{
+  "vehicleVin": "1HGCM82633A004352",
+  "repairOrders": [
+    {
+      "roNumber": "RO-5521",
+      "mileage": 30112,
+      "attachments": [
+        {
+          "attachmentId": "A-9001",
+          "category": "REPAIR_ORDER",
+          "description": "30,000 mile service",
+          "timestamp": "2025-01-08T10:15:00Z",
+          "downloadUrl": "https://service.dealer.example/attachments/A-9001"
+        },
+        {
+          "attachmentId": "A-9002",
+          "category": "INSPECTION_REPORT",
+          "description": "Multi-point inspection",
+          "timestamp": "2025-01-08T11:40:00Z",
+          "downloadUrl": "https://service.dealer.example/attachments/A-9002"
+        }
+      ]
+    },
+    {
+      "roNumber": "RO-6120",
+      "attachments": [
+        {
+          "attachmentId": "A-9107",
+          "category": "RECALL_NOTICE",
+          "description": "Recall 24V-123: airbag inflator replacement",
+          "timestamp": "2025-06-02T08:05:00Z",
+          "downloadUrl": "https://service.dealer.example/attachments/A-9107"
+        }
+      ]
+    }
+  ]
+}

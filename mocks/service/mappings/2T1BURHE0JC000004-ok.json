@@ -1,0 +1,15 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v1/vehicles/2T1BURHE0JC000004/repair-orders"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "repair-orders-2T1BURHE0JC000004.json",
+    "fixedDelayMilliseconds": 120
+  }
+}

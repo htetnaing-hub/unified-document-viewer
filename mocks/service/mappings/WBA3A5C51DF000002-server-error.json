@@ -1,0 +1,17 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v1/vehicles/WBA3A5C51DF000002/repair-orders"
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "message": "java.sql.SQLException: connection pool exhausted",
+      "trace": "internal-detail-that-must-not-leak"
+    }
+  }
+}

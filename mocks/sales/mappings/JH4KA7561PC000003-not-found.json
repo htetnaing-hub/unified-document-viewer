@@ -1,0 +1,17 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v1/vehicles/JH4KA7561PC000003/deals"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": "VEHICLE_NOT_FOUND",
+      "message": "No deals recorded for this VIN"
+    }
+  }
+}

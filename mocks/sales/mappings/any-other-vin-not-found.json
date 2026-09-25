@@ -1,0 +1,17 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/api/v1/vehicles/[^/]+/deals"
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": "VEHICLE_NOT_FOUND",
+      "message": "No deals recorded for this VIN"
+    }
+  }
+}

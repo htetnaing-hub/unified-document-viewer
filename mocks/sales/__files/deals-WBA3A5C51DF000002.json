@@ -1,0 +1,17 @@
+{
+  "vin": "WBA3A5C51DF000002",
+  "deals": [
+    {
+      "dealId": "D-3001",
+      "documents": [
+        {
+          "docId": "S-3001-INV",
+          "docType": "SALES_INVOICE",
+          "name": "Sales invoice #3001",
+          "createdOn": "2022-11-20",
+          "link": "https://sales.dealer.example/documents/S-3001-INV"
+        }
+      ]
+    }
+  ]
+}

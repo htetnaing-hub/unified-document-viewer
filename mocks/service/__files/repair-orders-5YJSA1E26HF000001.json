@@ -1,0 +1,17 @@
+{
+  "vehicleVin": "5YJSA1E26HF000001",
+  "repairOrders": [
+    {
+      "roNumber": "RO-7001",
+      "attachments": [
+        {
+          "attachmentId": "A-7001",
+          "category": "REPAIR_ORDER",
+          "description": "Tyre replacement",
+          "timestamp": "2025-02-10T09:00:00Z",
+          "downloadUrl": "https://service.dealer.example/attachments/A-7001"
+        }
+      ]
+    }
+  ]
+}

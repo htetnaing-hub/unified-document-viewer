@@ -1,0 +1,29 @@
+# Local infrastructure. Started automatically by `./mvnw spring-boot:run`
+# (spring-boot-docker-compose), or manually with `docker compose up -d`.
+services:
+  postgres:
+    image: 'postgres:17-alpine'
+    environment:
+      - 'POSTGRES_DB=docviewer'
+      - 'POSTGRES_USER=docviewer'
+      - 'POSTGRES_PASSWORD=docviewer-local-only'
+    ports:
+      - '5432'  # random host port; Spring Boot injects the connection details
+
+  # Mocked "Sales System API" (dealership sales / DMS). Mappings and bodies in mocks/sales.
+  sales-api:
+    image: 'wiremock/wiremock:3.13.2'
+    ports:
+      - '8081:8080'
+    volumes:
+      - './mocks/sales:/home/wiremock:ro'
+    command: ['--disable-banner']
+
+  # Mocked "Service System API" (workshop / after-sales). Mappings and bodies in mocks/service.
+  service-api:
+    image: 'wiremock/wiremock:3.13.2'
+    ports:
+      - '8082:8080'
+    volumes:
+      - './mocks/service:/home/wiremock:ro'
+    command: ['--disable-banner']
