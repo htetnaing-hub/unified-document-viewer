@@ -1,0 +1,31 @@
+### IntelliJ HTTP Client: run each request with the gutter ▶ icon.
+### Change the port if you started the app with SERVER_PORT.
+@host = http://localhost:8080
+
+### Happy path: both systems answer, 6 documents
+GET {{host}}/api/v1/vehicles/1HGCM82633A004352/documents
+X-Correlation-Id: demo-happy-path
+
+### Service System is slow (5 s): partial result after the 2 s timeout
+GET {{host}}/api/v1/vehicles/5YJSA1E26HF000001/documents
+
+### Service System returns 500: partial result, upstream error not leaked
+GET {{host}}/api/v1/vehicles/WBA3A5C51DF000002/documents
+
+### Sales System resets the connection: partial result
+GET {{host}}/api/v1/vehicles/2T1BURHE0JC000004/documents
+
+### No documents in either system: 200 with an empty list
+GET {{host}}/api/v1/vehicles/JH4KA7561PC000003/documents
+
+### Invalid VIN: 400 application/problem+json
+GET {{host}}/api/v1/vehicles/NOT-A-VIN/documents
+
+### Health (includes documentSources)
+GET {{host}}/actuator/health
+
+### Prometheus metrics
+GET {{host}}/actuator/prometheus
+
+### OpenAPI contract
+GET {{host}}/v3/api-docs

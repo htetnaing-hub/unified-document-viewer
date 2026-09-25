@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unified Document Viewer</title>
+<!-- Minimal test harness for the backend API (the frontend layer is stubbed in this assessment). -->
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1d2330; --muted: #5d6677; --border: #dde1e8;
+    --accent: #1f5fbf; --sales: #0f7b5f; --sales-bg: #e3f4ee; --service: #8a4b08; --service-bg: #fbeedd;
+    --warn-bg: #fff4d6; --warn: #7a5400; --error-bg: #fde7e7; --error: #9b1c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --surface: #1c2027; --text: #e6e9ef; --muted: #9aa3b2; --border: #2e3440;
+      --accent: #7aa7ff; --sales: #6fd3b3; --sales-bg: #173a31; --service: #f3b76b; --service-bg: #3d2c14;
+      --warn-bg: #3a3014; --warn: #f2d27a; --error-bg: #3d1a1a; --error: #f5a3a3;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  p.lead { margin: 0 0 24px; color: var(--muted); }
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  input { flex: 1 1 260px; padding: 10px 12px; font: inherit; font-family: ui-monospace, Consolas, monospace;
+          border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
+  input:not(:placeholder-shown) { text-transform: uppercase; }
+  button { padding: 10px 18px; font: inherit; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: wait; }
+  .examples { margin: 10px 0 24px; font-size: .875rem; color: var(--muted); }
+  .examples button { padding: 2px 8px; margin: 2px; background: transparent; color: var(--accent); border: 1px solid var(--border); font-family: ui-monospace, Consolas, monospace; font-size: .8rem; }
+  .banner { padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; }
+  .banner.warn { background: var(--warn-bg); color: var(--warn); }
+  .banner.error { background: var(--error-bg); color: var(--error); }
+  .sources { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .source { flex: 1 1 200px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: .875rem; }
+  .source strong { display: block; font-size: .95rem; }
+  .status-OK { color: var(--sales); } .status-TIMEOUT, .status-ERROR { color: var(--error); }
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td.title { white-space: normal; min-width: 200px; }
+  th { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .badge.SALES { background: var(--sales-bg); color: var(--sales); }
+  .badge.SERVICE { background: var(--service-bg); color: var(--service); }
+  .stale { font-size: .75rem; color: var(--warn); margin-left: 6px; }
+  .empty { padding: 24px; text-align: center; color: var(--muted); }
+  a { color: var(--accent); }
+  footer { margin-top: 24px; font-size: .8rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Unified Document Viewer</h1>
+  <p class="lead">One search across the Sales and Service systems.</p>
+
+  <form id="search">
+    <input id="vin" name="vin" placeholder="Enter a 17-character VIN" maxlength="17" autocomplete="off" required aria-label="VIN">
+    <button id="submit" type="submit">Search</button>
+  </form>
+  <div class="examples">Demo VINs:
+    <button type="button" data-vin="1HGCM82633A004352" title="Both systems answer">1HGCM82633A004352</button>
+    <button type="button" data-vin="5YJSA1E26HF000001" title="Service System is slow">5YJSA1E26HF000001</button>
+    <button type="button" data-vin="WBA3A5C51DF000002" title="Service System fails">WBA3A5C51DF000002</button>
+    <button type="button" data-vin="2T1BURHE0JC000004" title="Sales System connection reset">2T1BURHE0JC000004</button>
+    <button type="button" data-vin="JH4KA7561PC000003" title="No documents">JH4KA7561PC000003</button>
+  </div>
+
+  <div id="result" aria-live="polite"></div>
+  <footer>API contract: <a href="/swagger-ui.html">Swagger UI</a> · <a href="/actuator/health">health</a> · <a href="/actuator/prometheus">metrics</a></footer>
+</main>
+<script>
+  const form = document.getElementById('search');
+  const input = document.getElementById('vin');
+  const submit = document.getElementById('submit');
+  const result = document.getElementById('result');
+
+  document.querySelectorAll('[data-vin]').forEach(button =>
+    button.addEventListener('click', () => { input.value = button.dataset.vin; form.requestSubmit(); }));
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    submit.disabled = true;
+    result.replaceChildren(el('p', {}, 'Searching…'));
+    const started = performance.now();
+    try {
+      const response = await fetch('/api/v1/vehicles/' + encodeURIComponent(input.value.trim()) + '/documents');
+      const body = await response.json();
+      const elapsed = Math.round(performance.now() - started);
+      result.replaceChildren(...(response.ok ? renderResult(body, elapsed) : renderProblem(body)));
+    } catch (e) {
+      result.replaceChildren(el('div', { class: 'banner error' }, 'Could not reach the service: ' + e.message));
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  function renderResult(data, elapsed) {
+    const nodes = [];
+    if (data.partial) {
+      const failed = data.sources.filter(s => s.status !== 'OK').map(s => s.displayName + ' (' + s.status.toLowerCase() + ')');
+      nodes.push(el('div', { class: 'banner warn' },
+        'Partial results: ' + failed.join(', ') + '. Documents marked "last known" may be out of date.'));
+    }
+    nodes.push(el('div', { class: 'sources' }, ...data.sources.map(s =>
+      el('div', { class: 'source' },
+        el('strong', {}, s.displayName),
+        el('span', { class: 'status-' + s.status }, s.status),
+        ' · ' + s.documentCount + ' document' + (s.documentCount === 1 ? '' : 's') + ' · ' + s.latencyMs + ' ms'
+        + (s.stale ? ' · last known copy' : '')))));
+    nodes.push(el('p', { class: 'examples' }, data.documents.length + ' documents for ' + data.vin + ' in ' + elapsed + ' ms'));
+
+    if (data.documents.length === 0) {
+      nodes.push(el('div', { class: 'table-wrap' }, el('div', { class: 'empty' }, 'No documents found for this vehicle.')));
+      return nodes;
+    }
+    const rows = data.documents.map(d => el('tr', {},
+      el('td', {}, el('span', { class: 'badge ' + d.source }, d.sourceDisplayName)),
+      el('td', {}, formatType(d.type)),
+      el('td', { class: 'title' }, d.url ? el('a', { href: d.url, target: '_blank', rel: 'noopener' }, d.title || d.id) : (d.title || d.id),
+        d.stale ? el('span', { class: 'stale' }, 'last known') : ''),
+      el('td', {}, d.reference || ''),
+      el('td', {}, d.issuedAt ? new Date(d.issuedAt).toLocaleDateString() : '—')));
+    nodes.push(el('div', { class: 'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, ...['Source', 'Type', 'Document', 'Reference', 'Issued'].map(h => el('th', {}, h)))),
+      el('tbody', {}, ...rows))));
+    return nodes;
+  }
+
+  function renderProblem(problem) {
+    return [el('div', { class: 'banner error' }, (problem.title || 'Error') + ': ' + (problem.detail || ''))];
+  }
+
+  function formatType(type) {
+    return (type || '').toLowerCase().replaceAll('_', ' ');
+  }
+
+  // Builds DOM nodes; text is always set via text nodes, never innerHTML, so API data cannot inject markup.
+  function el(tag, attrs, ...children) {
+    const node = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v));
+    children.forEach(c => node.append(c instanceof Node ? c : document.createTextNode(String(c))));
+    return node;
+  }
+</script>
+</body>
+</html>
