@@ -43,23 +43,23 @@ The brief leaves these open; each is a decision I made and can revisit.
 
 ```mermaid
 flowchart LR
-    user([Dealer staff]) --> ui[Web client<br/>stub: static page / Swagger UI]
-    ui -->|GET /api/v1/vehicles/{vin}/documents| api
+    user(["Dealer staff"]) --> ui["Web client<br/>stub: static page / Swagger UI"]
+    ui -->|"GET /api/v1/vehicles/{vin}/documents"| api
 
-    subgraph svc [Unified Document Viewer service]
-        api[REST API<br/>VehicleDocumentController] --> agg[DocumentAggregator]
-        agg -->|virtual thread| salesAd[Sales adapter<br/>client + mapper]
-        agg -->|virtual thread| serviceAd[Service adapter<br/>client + mapper]
-        agg --> snap[(Snapshot store)]
-        agg --> audit[(Search audit)]
-        agg --> tel[Telemetry<br/>metrics + health]
+    subgraph svc ["Unified Document Viewer service"]
+        api["REST API<br/>VehicleDocumentController"] --> agg["DocumentAggregator"]
+        agg -->|"virtual thread"| salesAd["Sales adapter<br/>client + mapper"]
+        agg -->|"virtual thread"| serviceAd["Service adapter<br/>client + mapper"]
+        agg --> snap[("Snapshot store")]
+        agg --> audit[("Search audit")]
+        agg --> tel["Telemetry<br/>metrics + health"]
     end
 
-    salesAd -->|HTTP, 2 s timeout| sales[Sales System API<br/>mock: WireMock :8081]
-    serviceAd -->|HTTP, 2 s timeout| service[Service System API<br/>mock: WireMock :8082]
-    snap --- db[(PostgreSQL)]
+    salesAd -->|"HTTP, 2 s timeout"| sales["Sales System API<br/>mock: WireMock :8081"]
+    serviceAd -->|"HTTP, 2 s timeout"| service["Service System API<br/>mock: WireMock :8082"]
+    snap --- db[("PostgreSQL")]
     audit --- db
-    tel -.-> prom[Prometheus /actuator/prometheus]
+    tel -.-> prom["Prometheus<br/>/actuator/prometheus"]
 ```
 
 ### Components
