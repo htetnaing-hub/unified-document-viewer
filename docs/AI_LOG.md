@@ -1,4 +1,4 @@
-# AI Collaboration Log
+git # AI Collaboration Log
 
 Raw notes that feed the README's AI Collaboration Narrative. One row per task: what was asked,
 what the AI proposed, what was changed or rejected, and how it was verified.
@@ -20,3 +20,5 @@ what the AI proposed, what was changed or rejected, and how it was verified.
 | 13 | Honest TDD note | Narrative claimed a test-first rule that the first pass did not follow | Added "Where the process fell short" to the README | Chose to disclose rather than hide the gap | README reviewed against the actual history |
 | 14 | Git history | Single commit hid the build-up | Re-committed in logical layers (scaffold → rules → mocks → core → adapters → persistence/API → docs) | Real commit times kept; no rewritten dates | `git log`; full `./mvnw verify` on the final commit |
 | 15 | Architecture diagram not rendering | Diagram showed as raw code on GitHub (spotted by me) | AI-written Mermaid used `{vin}` in an unquoted edge label; `{` starts a diamond shape, so parsing failed | Quoted the label; later quoted every label so older Mermaid versions (e.g. in IDE plugins) also render it | Rendered with Mermaid 9, 10 and 11: parse error before, renders in all three after |
+| 16 | My code review and sign-off | Review, test and confirm the generated code myself before accepting it | — (my own review) | Reviewed every package against the design; stepped through the parallel calls in the debugger; injected six faults (E1–E6 in the README) | Each fault turned its test red and was reverted; 55/55 green locally and in CI; all scenarios checked on the running app |
+| 17 | Confirming the documented experiments | Make sure the README states only facts | Assistant re-ran E1–E6 by script before they were written into the docs | Its first E6 mutation did not compile (Git Bash rewrote a `//` argument as a path); re-ran E6 with a compilable fault | 6/6 caught; `git status` clean afterwards |

@@ -186,6 +186,12 @@ Example alerts: service error rate over 5% for 5 minutes; p95 latency over 1.5 s
 The parallelism and tracing tests were checked by mutation: sequential calls fail the first, and
 removing context propagation fails the second.
 
+**Review and confirmation.** Before sign-off I reviewed the code myself and injected six deliberate
+faults, one at a time, to confirm the suite catches them: a looser VIN rule, the wrong sort order,
+sequential source calls, a wrong 503 rule, a Sales 404 treated as an error, and a missing HTTP
+read timeout. Each fault turned its test red and was reverted. The full list is in the README
+("My review and sign-off").
+
 ## 9. How I used GenAI in the design phase
 
 I used the assistant to widen the options and speed up the drafting. The decisions and the
@@ -210,6 +216,11 @@ checking stayed with me. Each design activity below had a clear split of roles.
 3. **A broken diagram.** The architecture diagram rendered as raw code on GitHub because of an
    unquoted `{vin}` label. I spotted it; the labels are now quoted and the diagram was checked
    in three Mermaid versions.
+
+**Review and sign-off stayed with me.** I checked the implementation against this design package
+by package, confirmed each failure path behaves as section 4 describes, and verified the design's
+claims (parallel calls, timeouts, stale fallback, tracing) through tests that I watched fail when
+the behaviour was broken.
 
 **What I would do the same way again:** settle the requirements and assumptions *before* asking
 for a design, and treat every AI statement about a library as a hypothesis to verify.

@@ -130,8 +130,8 @@ docs/                             system design, ADRs, AI log
 ## AI Collaboration Narrative
 
 I treated the AI as a fast, capable collaborator whose output is **a proposal, not a fact**. I
-owned three things it could not: the requirements, the rules it had to follow, and the
-verification. Every claim below can be checked in the repository (see the last part of this section).
+owned four things it could not: the requirements, the rules it had to follow, the verification,
+and the final review and sign-off of the code. Every claim below can be checked in the repository (see the last part of this section).
 
 ### 1. How I directed the AI
 
@@ -153,13 +153,38 @@ Brief ──► Rules ──► Plan ──► Generate ──► Verify ──�
 
 | Technique | Why it matters | Evidence |
 |---|---|---|
+| **My own code review** | I read every package against the design and confirmed I can explain each decision and failure path before accepting the code | Section "My review and sign-off" below; AI log row 16 |
 | **Mutation checks** on the key tests | A test that has never failed proves nothing. Making the calls sequential fails the parallelism test; removing context propagation fails the tracing test. | `callsSourcesInParallel`, `DocumentSearchTracingTest`; AI log rows 7, 12 |
 | **Root cause before fix** | When 2 of 54 tests failed, the causes were a cold in-process mock server and Spring Boot disabling metrics in tests. Neither was fixed by raising a timeout or weakening an assertion. | AI log rows 5, 6 |
 | **Checking the AI against the source** | The AI's knowledge of Spring Boot 4 lagged, so class locations were confirmed in the actual dependency jars. Its `CLAUDE.md` was checked line by line against the brief. | AI log rows 2, 3 |
 | **Running the real system** | I ran every scenario myself in IntelliJ against Docker, including stopping the Service mock to watch the stale fallback. The first end-to-end run surfaced a port conflict and a UI bug that no test covered. | AI log rows 8, 9 |
 | **CI as the final judge** | The same `./mvnw verify` runs on a clean machine on every push. | GitHub Actions: 55 tests passing |
 
-### 3. Where the AI was wrong, and how it was caught
+### 3. My review and sign-off
+
+Accepting AI-written code is my responsibility, so I reviewed and confirmed it myself before
+treating it as mine. I followed a fixed procedure:
+
+| Step | What I did | Confirmed when |
+|---|---|---|
+| 1. Big picture | Read the design doc and ADRs; mapped every package to the architecture diagram | I could redraw the architecture and the 8-step request flow from memory |
+| 2. Code, layer by layer | Read `domain` → `aggregation` → `source` → `persistence` → `api`/`config`/`observability`; stepped through `callsSourcesInParallel` in the debugger to watch the two virtual threads | I could explain `DocumentAggregator.aggregate()` line by line, and what happens when one or both systems fail |
+| 3. Break the code | Introduced six deliberate faults, one at a time, and reverted each (table below) | Every fault turned its test red |
+| 4. Full suite | Ran all tests with coverage in IntelliJ and `verify` from the Maven tool window; checked the CI run on GitHub | 55/55 passing locally and in CI |
+| 5. Running system | Ran every scenario against Docker from `http/documents.http`, including the stale fallback, correlation id, health, metrics and Swagger | Every response matched the documented behaviour |
+
+**Fault-injection experiments** (each reverted afterwards; `git status` clean):
+
+| # | Fault introduced | Test that caught it |
+|---|---|---|
+| E1 | VIN pattern accepts I, O and Q | `VinTest.rejectsMalformedVin` |
+| E2 | Oldest documents sorted first | `AggregatedDocumentsTest.mergesAllSourcesNewestFirstWithUndatedDocumentsLast` |
+| E3 | Source calls made one after another | `DocumentAggregatorTest.callsSourcesInParallel` |
+| E4 | 503 returned even when a stored copy exists | `DocumentAggregatorTest.allSourcesDownButStoredCopyExistsStillAnswers` |
+| E5 | Sales 404 treated as an error | `SalesSystemClientTest.unknownVehicleIsAnEmptyListNotAnError` |
+| E6 | HTTP read timeout removed | `ServiceSystemClientTest.slowResponseIsReportedAsTimeoutAfterTheConfiguredTimeout` |
+
+### 4. Where the AI was wrong, and how it was caught
 
 | AI output | How it was caught | Fix |
 |---|---|---|
@@ -168,16 +193,17 @@ Brief ──► Rules ──► Plan ──► Generate ──► Verify ──�
 | The design doc claimed the source calls appear as parallel trace spans, but nothing tested it | Self-review against the evaluation framework | Added a tracing test and mutation-checked it |
 | The architecture diagram used `{vin}` in an unquoted Mermaid label, so it rendered as raw code | **I spotted it** when viewing the doc on GitHub | Quoted the labels; verified with Mermaid 9, 10 and 11 |
 
-### 4. Where my process fell short
+### 5. Where my process fell short
 
 `CLAUDE.md` asks for test-first development, but the first implementation was generated in one
 pass, with each layer's tests written straight after its code. I compensated with mutation checks
 and root-cause debugging, and the test added later (tracing) was written first and shown to fail.
 Next time I would enforce test-first by giving the AI one small, test-led step per prompt.
 
-### 5. Ownership, and what I would bring to a team
+### 6. Ownership, and what I would bring to a team
 
-The AI wrote most of the code; the decisions are mine and I can defend each one:
+The AI wrote most of the code. I reviewed all of it, confirmed it by breaking it on purpose,
+and signed it off, so the decisions are mine and I can defend each one:
 - parallel calls on virtual threads rather than WebFlux (ADR 0001)
 - partial results with a stale fallback rather than a failed search (ADR 0002)
 - what is persisted and why (ADR 0003)
