@@ -188,20 +188,28 @@ removing context propagation fails the second.
 
 ## 9. How I used GenAI in the design phase
 
-- **Requirements before solutions.** I gave the assistant the brief and the job description and
-  asked for the requirements, deliverables and evaluation criteria first. Only then did I pick the
-  scenario (D), the layer to implement (backend) and the stack.
-- **Separating the brief from my assumptions.** I asked the assistant to check its own `CLAUDE.md`
-  against the PDF. That showed it had mixed its design choices into the "requirements". The fix
-  became a working rule for the whole project: the brief's words are quoted, and every decision
-  of ours is an explicit, numbered assumption (section 2) that can be challenged.
-- **Trade-offs made explicit.** For each major choice the assistant had to name the alternative
-  and why it lost. The results are the three ADRs:
-  - virtual threads over WebFlux
-  - partial results with a stale fallback over failing the search
-  - snapshots and audit over "persist nothing"
-- **Scope control.** A circuit-breaker library was in the initial plan. I deferred it (section 5)
-  because timeouts plus the stale fallback already meet the brief, and its Spring Boot 4 support
-  was unconfirmed. Adding it would have added risk without adding value for this assessment.
-- **Verifying against reality.** Where the design depended on a library's behaviour, the claim was
-  checked in the dependency jars or proven by a test, not taken from the assistant's memory.
+I used the assistant to widen the options and speed up the drafting. The decisions and the
+checking stayed with me. Each design activity below had a clear split of roles.
+
+| Design activity | What the AI did | What I did | Result in this document |
+|---|---|---|---|
+| **Understand the problem** | Extracted requirements, deliverables and evaluation criteria from the brief and the job description | Chose the scenario, the layer to build and the stack from that list | Section 1 |
+| **Resolve ambiguity** | Listed the points the brief leaves open, with a proposed answer for each | Required each answer to be written down as a numbered assumption, separate from the brief | Section 2 (A1–A11) |
+| **Compare options** | Named the alternatives for each major choice and argued the trade-offs | Reviewed them against the brief's scope and how easily a team could maintain the result | Three ADRs; section 7 |
+| **Control scope** | Initially proposed a circuit-breaker library | Deferred: timeouts plus the stale fallback already meet the brief, and its Spring Boot 4 support was unconfirmed | Section 5, "next steps" |
+| **Fact-check the design** | Stated how libraries behave | Required each claim to be confirmed in the dependency jars or proven by a test | Sections 6 and 8 |
+
+**Three moments where checking changed the design:**
+1. **Requirements vs assumptions.** Asked to prove its `CLAUDE.md` against the PDF, the assistant
+   was shown to have presented its own choices (endpoint path, partial-failure rule) as Keyloop's
+   requirements. That became the rule this document follows: the brief is quoted, and everything
+   else is a challengeable assumption.
+2. **An untested claim.** Section 6 said the two source calls appear as parallel spans in one
+   trace, but nothing proved it. A tracing test now does, and it was shown to fail when context
+   propagation is removed.
+3. **A broken diagram.** The architecture diagram rendered as raw code on GitHub because of an
+   unquoted `{vin}` label. I spotted it; the labels are now quoted and the diagram was checked
+   in three Mermaid versions.
+
+**What I would do the same way again:** settle the requirements and assumptions *before* asking
+for a design, and treat every AI statement about a library as a hypothesis to verify.

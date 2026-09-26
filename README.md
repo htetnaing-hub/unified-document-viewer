@@ -129,67 +129,75 @@ docs/                             system design, ADRs, AI log
 
 ## AI Collaboration Narrative
 
-The brief asks candidates to use AI as an essential collaborator and to show how its work is
-directed and verified. This is how I did that.
+I treated the AI as a fast, capable collaborator whose output is **a proposal, not a fact**. I
+owned three things it could not: the requirements, the rules it had to follow, and the
+verification. Every claim below can be checked in the repository (see the last part of this section).
 
-**Strategy: requirements first, rules before code.**
-- I started by giving Claude the assessment brief and the job description. I asked it to extract
-  every requirement, deliverable and evaluation criterion before choosing anything. From that I
-  chose the backend option and a stack I can defend: Java 25, Spring Boot 4.1, PostgreSQL and
-  WireMock.
-- Before any feature code, I wrote down the rules the AI must follow in [`CLAUDE.md`](CLAUDE.md):
-  - the brief's requirements, quoted separately from my own assumptions
-  - test-driven development, and never weakening a test to make it pass
-  - an explicit timeout on every external call
-  - a definition of done: `./mvnw verify` passes
-- Shared permissions in `.claude/settings.json` let the assistant build and test freely, but
-  commits need approval and pushes are blocked.
-- I then directed Claude Code to implement the solution against those rules, which the brief
-  explicitly allows. The work went in layers: domain, aggregation, adapters, persistence, API,
-  observability and docs.
+### 1. How I directed the AI
 
-**Verification: nothing accepted on the AI's word.**
-- **I checked its guidance against the source.** I asked whether its `CLAUDE.md` really matched the
-  brief. The line-by-line check showed it had presented its own design decisions (endpoint path,
-  partial-failure behaviour) as Keyloop's requirements. It also missed the cURL deliverable,
-  scalability, debugging discipline and CI. All were fixed.
-- **Setup problems were diagnosed, not worked around.** A `release version 25 not supported` build
-  error was traced to `JAVA_HOME` pointing at JDK 19. The fix was the environment, not the project.
-- **Failing tests were root-caused from logs.** When 2 of 54 tests failed:
-  - One came from a cold in-process mock server, fixed with a warm-up request, not a longer timeout.
-  - The other came from Spring Boot disabling the metrics endpoint in tests, fixed by enabling it
-    explicitly.
-- **The most important tests were mutation-checked.** Making the source calls sequential fails the
-  parallelism test. Removing tracing-context propagation to the worker threads fails the tracing
-  test. Both tests therefore prove what they claim.
-- **Library APIs were checked against the real jars,** because Spring Boot 4 moved packages and the
-  AI's memory of older versions is not reliable.
-- **The running application was exercised end to end** for every scenario, with curl and in the
-  browser. That check found a real port conflict and a demo-page styling bug.
+```
+Brief ──► Rules ──► Plan ──► Generate ──► Verify ──► Log ──► Commit
+          CLAUDE.md          (Claude Code)  tests, mutation,  AI_LOG.md
+                                            run the real app
+```
 
-**Where the process fell short.**
-- `CLAUDE.md` asks for test-first development, but the first implementation was generated as one
-  pass, with each layer's tests written right after its code rather than before it.
-- I compensated with mutation checks on the key tests and by root-causing every failure instead of
-  adjusting assertions. The one test added later (tracing) was written first and shown to fail
-  against broken code.
-- For a real team I would enforce test-first more strictly, one small step per prompt.
+| Stage | Tool | What I did |
+|---|---|---|
+| Understand | Claude (chat) | Had it extract every requirement, deliverable and evaluation criterion from the brief and the job description **before** any design. Chose Scenario D, the backend option and the stack from that list. |
+| Set guardrails | [`CLAUDE.md`](CLAUDE.md), [`.claude/settings.json`](.claude/settings.json) | Wrote down the rules: the brief's requirements quoted separately from my assumptions, timeouts on every external call, never weaken a test, and a definition of done (`./mvnw verify` passes). Permissions let the AI build and test freely, but commits need approval and pushes are blocked. |
+| Diagnose | Claude Code in IntelliJ | Used it to root-cause environment problems (JDK 19 on `JAVA_HOME`, Docker not running) instead of patching the project around them. |
+| Implement | Claude Code | Directed it to build the solution layer by layer against those rules, which the brief explicitly allows. |
+| Verify | Tests, CI, the running app | Techniques in section 2. |
 
-**Quality: how the final result is ensured.**
-- **55 automated tests** cover the core business rules, both adapters and the full stack against real
-  PostgreSQL.
-- **CI** runs the same `./mvnw verify` on every push.
-- **Every AI mistake that was caught is recorded** with its fix in [docs/AI_LOG.md](docs/AI_LOG.md).
-  That includes one where the assistant drafted this kind of narrative describing review steps
-  that had not happened yet. I required that the narrative contain only verified facts.
+### 2. How I verified the output
 
-**Ownership.** The AI wrote most of the code, but the decisions are mine and I can explain each one:
+| Technique | Why it matters | Evidence |
+|---|---|---|
+| **Mutation checks** on the key tests | A test that has never failed proves nothing. Making the calls sequential fails the parallelism test; removing context propagation fails the tracing test. | `callsSourcesInParallel`, `DocumentSearchTracingTest`; AI log rows 7, 12 |
+| **Root cause before fix** | When 2 of 54 tests failed, the causes were a cold in-process mock server and Spring Boot disabling metrics in tests. Neither was fixed by raising a timeout or weakening an assertion. | AI log rows 5, 6 |
+| **Checking the AI against the source** | The AI's knowledge of Spring Boot 4 lagged, so class locations were confirmed in the actual dependency jars. Its `CLAUDE.md` was checked line by line against the brief. | AI log rows 2, 3 |
+| **Running the real system** | I ran every scenario myself in IntelliJ against Docker, including stopping the Service mock to watch the stale fallback. The first end-to-end run surfaced a port conflict and a UI bug that no test covered. | AI log rows 8, 9 |
+| **CI as the final judge** | The same `./mvnw verify` runs on a clean machine on every push. | GitHub Actions: 55 tests passing |
+
+### 3. Where the AI was wrong, and how it was caught
+
+| AI output | How it was caught | Fix |
+|---|---|---|
+| `CLAUDE.md` listed the AI's own design choices as Keyloop's requirements, and missed four deliverables | I asked it to prove the file against the PDF | Split "requirements (from the brief)" from "assumptions (mine)"; added the missing rules |
+| A draft of this narrative described review steps that had not happened | Every claim checked against the log and git history | Rewritten to contain only verified facts |
+| The design doc claimed the source calls appear as parallel trace spans, but nothing tested it | Self-review against the evaluation framework | Added a tracing test and mutation-checked it |
+| The architecture diagram used `{vin}` in an unquoted Mermaid label, so it rendered as raw code | **I spotted it** when viewing the doc on GitHub | Quoted the labels; verified with Mermaid 9, 10 and 11 |
+
+### 4. Where my process fell short
+
+`CLAUDE.md` asks for test-first development, but the first implementation was generated in one
+pass, with each layer's tests written straight after its code. I compensated with mutation checks
+and root-cause debugging, and the test added later (tracing) was written first and shown to fail.
+Next time I would enforce test-first by giving the AI one small, test-led step per prompt.
+
+### 5. Ownership, and what I would bring to a team
+
+The AI wrote most of the code; the decisions are mine and I can defend each one:
 - parallel calls on virtual threads rather than WebFlux (ADR 0001)
-- partial results with a stale fallback rather than failing the search (ADR 0002)
+- partial results with a stale fallback rather than a failed search (ADR 0002)
 - what is persisted and why (ADR 0003)
-- a 503 instead of a misleading empty list when nothing is available
+- a 503 rather than a misleading empty list when nothing is available
 
-The known limits are documented rather than hidden in section 5 of the design doc: no circuit
-breaker yet, no trace exporter, and no snapshot retention. With more time I would add those
-first. I would also start the next project with the mutation check built into the workflow, since
-it was the single most convincing way to prove a test is worth having.
+Known limits are documented, not hidden (design doc, section 5): no circuit breaker, no trace
+exporter, and no snapshot retention yet.
+
+The parts of this workflow that transfer to a team are practical:
+- **A shared `CLAUDE.md`** that encodes the team's standards, so every engineer's AI follows them.
+- **Guardrail permissions** that let the AI verify its own work but never push.
+- **Mutation-checking** any AI-written test that guards critical behaviour.
+- **A lightweight AI log**, so reviewers can see what was generated, what was changed and why.
+
+### Check these claims yourself
+
+```bash
+git log --oneline      # the build-up, layer by layer
+./mvnw verify          # 55 tests, including the mutation-checked ones
+```
+
+The full log of prompts, AI proposals, corrections and verification is in
+[docs/AI_LOG.md](docs/AI_LOG.md).
