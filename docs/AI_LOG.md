@@ -1,4 +1,4 @@
-git # AI Collaboration Log
+# AI Collaboration Log
 
 Raw notes that feed the README's AI Collaboration Narrative. One row per task: what was asked,
 what the AI proposed, what was changed or rejected, and how it was verified.
